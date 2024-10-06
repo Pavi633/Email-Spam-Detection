@@ -1,0 +1,38 @@
+from flask import Flask, request, render_template
+import joblib
+import pandas as pd
+
+# Initialize the Flask application
+app = Flask(__name__)
+
+# Load the pre-trained model and vectorizer
+model = joblib.load('spam_detection_model.pkl')
+feature_extraction = joblib.load('tfidf_vectorizer.pkl')
+
+# Define the home route
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+# Define the route to handle form submission
+@app.route('/predict', methods=['POST'])
+def predict():
+    input_mail = request.form['input_mail']
+
+    if input_mail:
+        # Convert input text to features
+        input_data_features = feature_extraction.transform([input_mail])
+
+        # Make prediction
+        prediction = model.predict(input_data_features)
+
+        # Determine the result
+        result = "Ham" if prediction[0] == 1 else "Spam"
+
+        return render_template('index.html', prediction_text=f'The email/message is **{result}**.')
+    else:
+        return render_template('index.html', prediction_text='Please enter a valid email/message text.')
+
+# Run the Flask application
+if __name__ == '__main__':
+    app.run(debug=True)
